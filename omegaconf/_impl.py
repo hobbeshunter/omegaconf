@@ -13,17 +13,18 @@ from ._utils import (
 )
 
 
-def _resolve_container_value(cfg: Container, key: Any) -> None:
+def _resolve_container_value(cfg: Container, key: Any, strict=True) -> None:
     node = cfg._get_child(key)
     assert isinstance(node, Node)
     if node._is_interpolation():
         try:
             resolved = node._dereference_node()
         except InterpolationToMissingValueError:
-            node._set_value(MISSING)
+            if strict:
+                node._set_value(MISSING)
         else:
             if isinstance(resolved, Container):
-                _resolve(resolved)
+                _resolve(resolved, strict=strict)
             if isinstance(resolved, InterpolationResultNode):
                 resolved_value = _get_value(resolved)
                 if is_primitive_container(resolved_value) or is_structured_config(
@@ -35,26 +36,27 @@ def _resolve_container_value(cfg: Container, key: Any) -> None:
             else:
                 node._set_value(_get_value(resolved))
     else:
-        _resolve(node)
+        _resolve(node, strict=strict)
 
 
-def _resolve(cfg: Node) -> Node:
+def _resolve(cfg: Node, strict=True) -> Node:
     assert isinstance(cfg, Node)
     if cfg._is_interpolation():
         try:
             resolved = cfg._dereference_node()
         except InterpolationToMissingValueError:
-            cfg._set_value(MISSING)
+            if strict:
+                cfg._set_value(MISSING)
         else:
             cfg._set_value(resolved._value())
 
     if isinstance(cfg, DictConfig):
         for k in cfg.keys():
-            _resolve_container_value(cfg, k)
+            _resolve_container_value(cfg, k, strict=strict)
 
     elif isinstance(cfg, ListConfig):
         for i in range(len(cfg)):
-            _resolve_container_value(cfg, i)
+            _resolve_container_value(cfg, i, strict=strict)
 
     return cfg
 

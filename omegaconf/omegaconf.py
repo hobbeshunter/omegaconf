@@ -780,7 +780,7 @@ class OmegaConf:
         )
 
     @staticmethod
-    def resolve(cfg: Container) -> None:
+    def resolve(cfg: Container, strict=True) -> None:
         """
         Resolves all interpolations in the given config object in-place.
 
@@ -795,7 +795,7 @@ class OmegaConf:
             raise ValueError(
                 f"Invalid config type ({type(cfg).__name__}), expected an OmegaConf Container"
             )
-        omegaconf._impl._resolve(cfg)
+        omegaconf._impl._resolve(cfg, strict)
 
     @staticmethod
     def missing_keys(cfg: Any) -> Set[str]:
